@@ -487,6 +487,42 @@ a:focus-visible {
   flex-shrink: 0;
 }
 
+.format-collapse-btn {
+  display: none;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.format-collapse-btn--active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .format-collapse-btn {
+    display: inline-flex;
+  }
+
+  .input-area--format-collapsed .input-format-extras,
+  .input-area--format-collapsed .input-format-inline,
+  .memo-edit--format-collapsed .input-format-extras,
+  .memo-edit--format-collapsed .input-format-inline {
+    display: none;
+  }
+}
+
 .format-btn {
   min-height: 30px;
   padding: 0 10px;

@@ -652,6 +652,8 @@ function App() {
     () => localStorage.getItem(ONBOARDING_KEY) !== '1'
   )
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(null)
+  const [inputFormatExpanded, setInputFormatExpanded] = useState(true)
+  const [editFormatExpanded, setEditFormatExpanded] = useState(true)
   const [actionMenuId, setActionMenuId] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState(null)
   const textareaRef = useRef(null)
@@ -1037,6 +1039,19 @@ function App() {
     )
   }
 
+  const renderFormatCollapseBtn = (expanded, onToggle) => (
+    <button
+      type="button"
+      className={`format-collapse-btn${expanded ? ' format-collapse-btn--active' : ''}`}
+      aria-label={expanded ? '서식 도구 접기' : '서식 도구 펼치기'}
+      aria-expanded={expanded}
+      onMouseDown={e => e.preventDefault()}
+      onClick={onToggle}
+    >
+      {expanded ? '접기' : '서식'}
+    </button>
+  )
+
   const togglePin = (id) => {
     setMemos(prev =>
       prev.map(m => (m.id === id ? { ...m, pinned: !m.pinned } : m))
@@ -1060,6 +1075,7 @@ function App() {
     setActionMenuId(null)
     setEditingId(m.id)
     setEditText(m.text)
+    setEditFormatExpanded(true)
   }
 
   const clearLongPressTimer = () => {
@@ -1493,7 +1509,9 @@ function App() {
       )}
 
       <div
-        className="input-area"
+        className={`input-area${
+          inputFormatExpanded ? '' : ' input-area--format-collapsed'
+        }`}
         onDragOver={handleDragOverShortcut}
         onDrop={handleMemoShortcutDrop}
       >
@@ -1510,11 +1528,18 @@ function App() {
           onDrop={handleMemoShortcutDrop}
           placeholder="지금 떠오른 생각을 적어보세요..."
         />
-        {renderColorShortcuts(textareaRef, text, setText)}
-        {renderMemoTagShortcuts(textareaRef, text, setText)}
+        <div className="input-format-extras">
+          {renderColorShortcuts(textareaRef, text, setText)}
+          {renderMemoTagShortcuts(textareaRef, text, setText)}
+        </div>
         <div className="input-footer">
           <div className="input-footer-left">
-            {renderFormatToolbar(textareaRef, text, setText)}
+            {renderFormatCollapseBtn(inputFormatExpanded, () =>
+              setInputFormatExpanded(v => !v)
+            )}
+            <div className="input-format-inline">
+              {renderFormatToolbar(textareaRef, text, setText)}
+            </div>
             <button
               type="button"
               className="hash-btn"
@@ -1650,7 +1675,9 @@ function App() {
               {editingId === m.id ? (
                 <div
                   ref={editCardRef}
-                  className="memo-edit"
+                  className={`memo-edit${
+                    editFormatExpanded ? '' : ' memo-edit--format-collapsed'
+                  }`}
                   onDragOver={handleDragOverShortcut}
                   onDrop={handleEditShortcutDrop}
                 >
@@ -1666,11 +1693,18 @@ function App() {
                     onDragOver={handleDragOverShortcut}
                     onDrop={handleEditShortcutDrop}
                   />
-                  {renderColorShortcuts(editTextareaRef, editText, setEditText)}
-                  {renderMemoTagShortcuts(editTextareaRef, editText, setEditText)}
+                  <div className="input-format-extras">
+                    {renderColorShortcuts(editTextareaRef, editText, setEditText)}
+                    {renderMemoTagShortcuts(editTextareaRef, editText, setEditText)}
+                  </div>
                   <div className="memo-edit-footer">
                     <div className="memo-edit-toolbar">
-                      {renderFormatToolbar(editTextareaRef, editText, setEditText)}
+                      {renderFormatCollapseBtn(editFormatExpanded, () =>
+                        setEditFormatExpanded(v => !v)
+                      )}
+                      <div className="input-format-inline">
+                        {renderFormatToolbar(editTextareaRef, editText, setEditText)}
+                      </div>
                       <button
                         type="button"
                         className="hash-btn"
