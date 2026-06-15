@@ -4,8 +4,9 @@ import './App.css'
 import EmojiPickerButton from './EmojiPickerButton'
 
 const HASHTAG_RE = /(#[^\s#]+)/g
+const COLOR_BLOCK_RE = /\{([#a-zA-Z0-9]+)\}([\s\S]*?)\{\/\}/g
 const INLINE_MD_RE =
-  /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|\{[#a-zA-Z0-9]+\}[^{]+\{\/\}|==[^=]+==)/g
+  /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|\{[#a-zA-Z0-9]+\}[\s\S]*?\{\/\}|==[^=]+==)/g
 const NAMED_COLORS = {
   red: '#c5221f',
   blue: '#1558b0',
@@ -93,7 +94,24 @@ function renderInlineMarkdown(text, keyPrefix) {
   })
 }
 
-function renderMarkdownSegment(text, baseKey) {
+function splitColorBlocks(text) {
+  const chunks = []
+  let lastIndex = 0
+  for (const match of text.matchAll(COLOR_BLOCK_RE)) {
+    if (match.index > lastIndex) {
+      chunks.push({ type: 'plain', text: text.slice(lastIndex, match.index) })
+    }
+    chunks.push({ type: 'color', name: match[1], inner: match[2] })
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) {
+    chunks.push({ type: 'plain', text: text.slice(lastIndex) })
+  }
+  if (chunks.length === 0) chunks.push({ type: 'plain', text })
+  return chunks
+}
+
+function renderMarkdownLines(text, baseKey) {
   if (!text) return null
   const lines = text.split('\n')
 
@@ -110,10 +128,30 @@ function renderMarkdownSegment(text, baseKey) {
   })
 }
 
-function renderMemoText(text, onTagClick, activeTag) {
+function renderMarkdownSegment(text, baseKey) {
+  if (!text) return null
+
+  return splitColorBlocks(text).flatMap((chunk, chunkIdx) => {
+    const key = `${baseKey}-b${chunkIdx}`
+    if (chunk.type === 'color') {
+      const cssColor = resolveTextColor(chunk.name)
+      if (!cssColor) {
+        return renderMarkdownLines(`{${chunk.name}}${chunk.inner}{/}`, key) ?? []
+      }
+      return [
+        <span key={key} style={{ color: cssColor }}>
+          {renderMarkdownSegment(chunk.inner, `${key}-in`)}
+        </span>,
+      ]
+    }
+    return renderMarkdownLines(chunk.text, key) ?? []
+  })
+}
+
+function renderHashtagParts(text, onTagClick, activeTag, keyPrefix) {
   return text.split(HASHTAG_RE).map((part, i) =>
     part.startsWith('#') && part.length > 1 ? (
-      <span key={i} className="inline-tag">
+      <span key={`${keyPrefix}-t${i}`} className="inline-tag">
         #
         <span
           role="button"
@@ -137,9 +175,34 @@ function renderMemoText(text, onTagClick, activeTag) {
         </span>
       </span>
     ) : part ? (
-      <Fragment key={i}>{renderMarkdownSegment(part, `p${i}`)}</Fragment>
+      <Fragment key={`${keyPrefix}-f${i}`}>
+        {renderMarkdownSegment(part, `${keyPrefix}-${i}`)}
+      </Fragment>
     ) : null
   )
+}
+
+function renderMemoText(text, onTagClick, activeTag) {
+  return splitColorBlocks(text).flatMap((chunk, chunkIdx) => {
+    if (chunk.type === 'color') {
+      const cssColor = resolveTextColor(chunk.name)
+      const inner = renderHashtagParts(chunk.inner, onTagClick, activeTag, `c${chunkIdx}`)
+      if (!cssColor) {
+        return renderHashtagParts(
+          `{${chunk.name}}${chunk.inner}{/}`,
+          onTagClick,
+          activeTag,
+          `cb${chunkIdx}`
+        )
+      }
+      return [
+        <span key={`mc${chunkIdx}`} style={{ color: cssColor }}>
+          {inner}
+        </span>,
+      ]
+    }
+    return renderHashtagParts(chunk.text, onTagClick, activeTag, `p${chunkIdx}`)
+  })
 }
 
 function autoResizeTextarea(el) {
@@ -156,7 +219,7 @@ const LONG_PRESS_MS = 500
 const ONBOARDING_KEY = 'flashMemoOnboardingDismissed'
 const SAMPLE_MEMO_TEXT = `**Flash Memo**에 오신 것을 환영해요 👋
 
-Ctrl+Enter로 저장 · #태그 로 분류
+✓ 저장 (PC: Ctrl+Enter) · #태그 로 분류
 **굵게** · ==강조== · {blue}색상{/} · [링크](https://)
 .url 파일을 입력창에 드롭해도 됩니다
 
@@ -1093,19 +1156,18 @@ function App() {
   }
 
   const q = searchQuery.trim().toLowerCase()
-  const filteredMemos = tagFilter
-    ? memos.filter(
-        m =>
-          memoHasTag(m.text, tagFilter) ||
-          (m.tag && m.tag.toLowerCase() === tagFilter)
-      )
-    : q
-      ? memos.filter(
-          m =>
-            m.text.toLowerCase().includes(q) ||
-            (m.tag && m.tag.toLowerCase().includes(q))
-        )
-      : memos
+
+  const memoMatchesTag = m =>
+    !tagFilter ||
+    memoHasTag(m.text, tagFilter) ||
+    (m.tag && m.tag.toLowerCase() === tagFilter)
+
+  const memoMatchesSearch = m =>
+    !q ||
+    m.text.toLowerCase().includes(q) ||
+    (m.tag && m.tag.toLowerCase().includes(q))
+
+  const filteredMemos = memos.filter(m => memoMatchesTag(m) && memoMatchesSearch(m))
 
   const listMemos =
     sortOrder === 'pinned' ? filteredMemos.filter(m => m.pinned) : filteredMemos
@@ -1125,7 +1187,6 @@ function App() {
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value)
-    setTagFilter(null)
   }
 
   const totalPages = Math.max(1, Math.ceil(sortedMemos.length / pageSize))
@@ -1412,8 +1473,9 @@ function App() {
         <section className="onboarding-card" aria-label="시작 안내">
           <div className="onboarding-card-body">
             <p>
-              입력 후 <strong>Ctrl+Enter</strong>로 저장하세요.{' '}
-              <strong>?</strong> 버튼에서 서식 안내를 볼 수 있어요.
+              입력 후 <strong>✓ 저장</strong>을 누르세요 (PC:{' '}
+              <strong>Ctrl+Enter</strong>). <strong>?</strong> 버튼에서 서식 안내를
+              볼 수 있어요.
             </p>
             <p className="onboarding-card-sub">
               카드 탭 편집 · 길게 눌러 삭제 · ⚙ 설정에서 백업
@@ -1492,7 +1554,7 @@ function App() {
         >
           <p className="md-hint">
             **굵게** · [링크](https://) · {'{red}색{/}'} · ==강조== · .url
-            드롭 · Ctrl+Enter 저장
+            드롭 · ✓ 저장 (PC: Ctrl+Enter)
           </p>
         </div>
       </div>
@@ -1569,7 +1631,11 @@ function App() {
           </div>
         ) : filteredMemos.length === 0 ? (
           <p className="empty-state">
-            {tagFilter ? `태그 #${tagFilter} 메모가 없어요` : '검색 결과가 없어요'}
+            {tagFilter && q
+              ? `태그 #${tagFilter}에서 검색 결과가 없어요`
+              : tagFilter
+                ? `태그 #${tagFilter} 메모가 없어요`
+                : '검색 결과가 없어요'}
           </p>
         ) : sortedMemos.length === 0 ? (
           <p className="empty-state">즐겨찾기(⭐) 메모가 없어요</p>
@@ -1643,7 +1709,7 @@ function App() {
                       </button>
                     </div>
                   </div>
-                  <p className="save-hint">Ctrl+Enter 저장 · Esc 취소</p>
+                  <p className="save-hint">저장 버튼 · Esc 취소 (PC: Ctrl+Enter)</p>
                 </div>
               ) : (
                 <div className="memo-card-view">
