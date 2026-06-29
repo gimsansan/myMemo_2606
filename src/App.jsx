@@ -115,16 +115,20 @@ function renderMarkdownLines(text, baseKey) {
   if (!text) return null
   const lines = text.split('\n')
 
-  return lines.map((line, lineIdx) => {
+  return lines.flatMap((line, lineIdx) => {
     const key = `${baseKey}-L${lineIdx}`
-    if (line === '') {
-      return <div key={key} className="md-line md-line--empty" />
+    const nodes = []
+    if (line) {
+      nodes.push(
+        <Fragment key={key}>
+          {renderInlineMarkdown(line, key)}
+        </Fragment>
+      )
     }
-    return (
-      <div key={key} className="md-line">
-        {renderInlineMarkdown(line, key)}
-      </div>
-    )
+    if (lineIdx < lines.length - 1) {
+      nodes.push(<br key={`${key}-br`} />)
+    }
+    return nodes
   })
 }
 
@@ -149,37 +153,65 @@ function renderMarkdownSegment(text, baseKey) {
 }
 
 function renderHashtagParts(text, onTagClick, activeTag, keyPrefix) {
-  return text.split(HASHTAG_RE).map((part, i) =>
-    part.startsWith('#') && part.length > 1 ? (
-      <span key={`${keyPrefix}-t${i}`} className="inline-tag">
-        #
-        <span
-          role="button"
-          tabIndex={0}
-          className={`inline-tag-label${
-            activeTag === part.slice(1).toLowerCase() ? ' inline-tag-label--active' : ''
-          }`}
-          onClick={e => {
-            e.stopPropagation()
-            onTagClick(part.slice(1))
-          }}
-          onKeyDown={e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
+  const parts = text.split(HASHTAG_RE)
+
+  return parts.flatMap((part, i) => {
+    if (part.startsWith('#') && part.length > 1) {
+      const prevPart = parts[i - 1] ?? ''
+      const nextPart = parts[i + 1] ?? ''
+      const nextTagFollows = !nextPart.trim() && parts[i + 2]?.startsWith('#')
+      const tagName = part.slice(1)
+      const nodes = []
+
+      if (prevPart.trim() && !prevPart.endsWith('\n')) {
+        nodes.push(<br key={`${keyPrefix}-t${i}-before`} />)
+      }
+
+      nodes.push(
+        <span key={`${keyPrefix}-t${i}`} className="inline-tag">
+          #
+          <span
+            role="button"
+            tabIndex={0}
+            className={`inline-tag-label${
+              activeTag === tagName.toLowerCase() ? ' inline-tag-label--active' : ''
+            }`}
+            onClick={e => {
               e.stopPropagation()
-              onTagClick(part.slice(1))
-            }
-          }}
-        >
-          {part.slice(1)}
+              onTagClick(tagName)
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                onTagClick(tagName)
+              }
+            }}
+          >
+            {tagName}
+          </span>
         </span>
-      </span>
-    ) : part ? (
-      <Fragment key={`${keyPrefix}-f${i}`}>
-        {renderMarkdownSegment(part, `${keyPrefix}-${i}`)}
-      </Fragment>
-    ) : null
-  )
+      )
+
+      if ((nextPart.trim() || nextTagFollows) && !nextPart.startsWith('\n')) {
+        nodes.push(<br key={`${keyPrefix}-t${i}-after`} />)
+      }
+
+      return nodes
+    }
+
+    if (!part.trim() && (parts[i - 1]?.startsWith('#') || parts[i + 1]?.startsWith('#'))) {
+      return []
+    }
+
+    return part
+      ? [
+          <Fragment key={`${keyPrefix}-f${i}`}>
+            {renderMarkdownSegment(part, `${keyPrefix}-${i}`)}
+          </Fragment>,
+        ]
+      : []
+  })
 }
 
 function renderMemoText(text, onTagClick, activeTag) {
@@ -217,6 +249,7 @@ const BACKUP_VERSION = 1
 const UNDO_TOAST_DURATION = 5000
 const LONG_PRESS_MS = 500
 const ONBOARDING_KEY = 'flashMemoOnboardingDismissed'
+const FORMAT_TOOLS_EXPANDED_KEY = 'flashMemoFormatToolsExpanded'
 const SAMPLE_MEMO_TEXT = `**Flash Memo**에 오신 것을 환영해요 👋
 
 ✓ 저장 (PC: Ctrl+Enter) · #태그 로 분류
@@ -652,8 +685,9 @@ function App() {
     () => localStorage.getItem(ONBOARDING_KEY) !== '1'
   )
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(null)
-  const [inputFormatExpanded, setInputFormatExpanded] = useState(true)
-  const [editFormatExpanded, setEditFormatExpanded] = useState(true)
+  const [formatToolsExpanded, setFormatToolsExpanded] = useState(
+    () => localStorage.getItem(FORMAT_TOOLS_EXPANDED_KEY) !== '0'
+  )
   const [actionMenuId, setActionMenuId] = useState(null)
   const [confirmDialog, setConfirmDialog] = useState(null)
   const textareaRef = useRef(null)
@@ -1052,6 +1086,14 @@ function App() {
     </button>
   )
 
+  const toggleFormatTools = () => {
+    setFormatToolsExpanded(prev => {
+      const next = !prev
+      localStorage.setItem(FORMAT_TOOLS_EXPANDED_KEY, next ? '1' : '0')
+      return next
+    })
+  }
+
   const togglePin = (id) => {
     setMemos(prev =>
       prev.map(m => (m.id === id ? { ...m, pinned: !m.pinned } : m))
@@ -1075,7 +1117,6 @@ function App() {
     setActionMenuId(null)
     setEditingId(m.id)
     setEditText(m.text)
-    setEditFormatExpanded(true)
   }
 
   const clearLongPressTimer = () => {
@@ -1510,7 +1551,7 @@ function App() {
 
       <div
         className={`input-area${
-          inputFormatExpanded ? '' : ' input-area--format-collapsed'
+          formatToolsExpanded ? '' : ' input-area--format-collapsed'
         }`}
         onDragOver={handleDragOverShortcut}
         onDrop={handleMemoShortcutDrop}
@@ -1534,9 +1575,7 @@ function App() {
         </div>
         <div className="input-footer">
           <div className="input-footer-left">
-            {renderFormatCollapseBtn(inputFormatExpanded, () =>
-              setInputFormatExpanded(v => !v)
-            )}
+            {renderFormatCollapseBtn(formatToolsExpanded, toggleFormatTools)}
             <div className="input-format-inline">
               {renderFormatToolbar(textareaRef, text, setText)}
             </div>
@@ -1676,7 +1715,7 @@ function App() {
                 <div
                   ref={editCardRef}
                   className={`memo-edit${
-                    editFormatExpanded ? '' : ' memo-edit--format-collapsed'
+                    formatToolsExpanded ? '' : ' memo-edit--format-collapsed'
                   }`}
                   onDragOver={handleDragOverShortcut}
                   onDrop={handleEditShortcutDrop}
@@ -1699,9 +1738,7 @@ function App() {
                   </div>
                   <div className="memo-edit-footer">
                     <div className="memo-edit-toolbar">
-                      {renderFormatCollapseBtn(editFormatExpanded, () =>
-                        setEditFormatExpanded(v => !v)
-                      )}
+                      {renderFormatCollapseBtn(formatToolsExpanded, toggleFormatTools)}
                       <div className="input-format-inline">
                         {renderFormatToolbar(editTextareaRef, editText, setEditText)}
                       </div>

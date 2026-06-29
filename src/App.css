@@ -488,7 +488,7 @@ a:focus-visible {
 }
 
 .format-collapse-btn {
-  display: none;
+  display: inline-flex;
   min-height: 30px;
   padding: 0 10px;
   border: 1px solid var(--border);
@@ -510,17 +510,13 @@ a:focus-visible {
   border-color: var(--accent-border);
 }
 
-@media (hover: none), (pointer: coarse) {
-  .format-collapse-btn {
-    display: inline-flex;
-  }
-
-  .input-area--format-collapsed .input-format-extras,
-  .input-area--format-collapsed .input-format-inline,
-  .memo-edit--format-collapsed .input-format-extras,
-  .memo-edit--format-collapsed .input-format-inline {
-    display: none;
-  }
+.input-area--format-collapsed .input-format-extras,
+.input-area--format-collapsed .input-format-inline,
+.memo-edit--format-collapsed .input-format-extras,
+.memo-edit--format-collapsed .input-format-inline,
+.memo-edit--format-collapsed .memo-edit-toolbar > .hash-btn,
+.memo-edit--format-collapsed .memo-edit-toolbar > .emoji-picker-wrap {
+  display: none;
 }
 
 .format-btn {
