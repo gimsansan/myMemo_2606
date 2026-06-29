@@ -56,4 +56,5 @@ Vercel 등에 연결 시: Framework **Vite**, Build `npm run build`, Output **`d
 |------|------|
 | [USAGE.md](./USAGE.md) | **일반 사용자** + 설치·배포 안내 |
 | [SECURITY.md](./SECURITY.md) | **보안·프라이버시** — URL 공유, localStorage, 주의사항 |
+| [GIT_PUSH_WINDOWS.md](./GIT_PUSH_WINDOWS.md) | **Git push 403** — 자격 증명 삭제·재로그인 (Windows) |
 | README.md (이 파일) | 저장소 개요·개발 명령 |
