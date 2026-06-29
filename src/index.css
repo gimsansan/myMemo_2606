@@ -3,10 +3,136 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --bg: #f5f5f3;
+  --bg-image: none;
+  --text: #1a1a1a;
+  --text-muted: #aaa;
+  --text-subtle: #888;
+  --text-secondary: #666;
+  --surface: #fff;
+  --surface-muted: #f8f9fc;
+  --surface-hover: #f5f5f5;
+  --border: #e0e0e0;
+  --border-soft: #e8e8e8;
+  --divider: #f0f0f0;
+  --accent: #1558b0;
+  --accent-strong: #1a73e8;
+  --accent-soft: #e8f0fe;
+  --accent-soft-hover: #d2e3fc;
+  --accent-border: #c5d9fc;
+  --accent-on: #fff;
+  --link: #1a73e8;
+  --link-hover: #1558b0;
+  --btn-primary-bg: #1a1a1a;
+  --btn-primary-text: #fff;
+  --btn-primary-hover: #333;
+  --highlight-bg: #fff3cd;
+  --pinned-bg: #fffef8;
+  --pinned-border: #f5d76e;
+  --edit-border: #1a73e8;
+  --edit-shadow: 0 0 0 1px #1a73e8;
+  --danger: #c5221f;
+  --danger-soft: #fce8e6;
+  --danger-border: #f5c6c4;
+  --toast-bg: #323232;
+  --toast-text: #fff;
+  --input-scheme: light;
+  --card-shadow: none;
+  --panel-blur: 0;
+  --surface-glass: #fff;
+}
+
+[data-theme='neon'] {
+  --bg: #0a0a12;
+  --bg-image: radial-gradient(ellipse at 20% 0%, rgba(167, 139, 250, 0.12), transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(34, 211, 238, 0.1), transparent 45%);
+  color-scheme: dark;
+  --text: #e8eaed;
+  --text-muted: #8b93a7;
+  --text-subtle: #9aa3b8;
+  --text-secondary: #b0b8c9;
+  --surface: #12121f;
+  --surface-muted: #1a1a2e;
+  --surface-hover: #1e1e32;
+  --border: rgba(34, 211, 238, 0.22);
+  --border-soft: rgba(34, 211, 238, 0.16);
+  --divider: rgba(255, 255, 255, 0.08);
+  --accent: #22d3ee;
+  --accent-strong: #67e8f9;
+  --accent-soft: rgba(34, 211, 238, 0.12);
+  --accent-soft-hover: rgba(34, 211, 238, 0.2);
+  --accent-border: rgba(34, 211, 238, 0.35);
+  --accent-on: #0a0a12;
+  --link: #67e8f9;
+  --link-hover: #22d3ee;
+  --btn-primary-bg: #22d3ee;
+  --btn-primary-text: #0a0a12;
+  --btn-primary-hover: #67e8f9;
+  --highlight-bg: rgba(250, 204, 21, 0.2);
+  --pinned-bg: rgba(245, 215, 110, 0.08);
+  --pinned-border: rgba(245, 215, 110, 0.45);
+  --edit-border: #22d3ee;
+  --edit-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5), 0 0 16px rgba(34, 211, 238, 0.2);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --danger-border: rgba(248, 113, 113, 0.35);
+  --toast-bg: #1a1a2e;
+  --toast-text: #e8eaed;
+  --input-scheme: dark;
+  --card-shadow: 0 0 20px rgba(34, 211, 238, 0.08);
+  --panel-blur: 0;
+  --surface-glass: #12121f;
+}
+
+[data-theme='glass'] {
+  --bg: #ecfdf5;
+  --bg-image: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 45%, #a7f3d0 100%);
+  color-scheme: light;
+  --text: #064e3b;
+  --text-muted: #6b9080;
+  --text-subtle: #52796f;
+  --text-secondary: #2d6a4f;
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface-muted: rgba(255, 255, 255, 0.4);
+  --surface-hover: rgba(255, 255, 255, 0.72);
+  --border: rgba(255, 255, 255, 0.75);
+  --border-soft: rgba(167, 243, 208, 0.55);
+  --divider: rgba(6, 95, 70, 0.08);
+  --accent: #047857;
+  --accent-strong: #059669;
+  --accent-soft: rgba(255, 255, 255, 0.65);
+  --accent-soft-hover: rgba(255, 255, 255, 0.85);
+  --accent-border: rgba(110, 231, 183, 0.65);
+  --accent-on: #fff;
+  --link: #047857;
+  --link-hover: #065f46;
+  --btn-primary-bg: #059669;
+  --btn-primary-text: #fff;
+  --btn-primary-hover: #047857;
+  --highlight-bg: rgba(254, 243, 199, 0.75);
+  --pinned-bg: rgba(255, 255, 255, 0.5);
+  --pinned-border: rgba(251, 191, 36, 0.55);
+  --edit-border: #10b981;
+  --edit-shadow: 0 0 0 1px rgba(16, 185, 129, 0.45);
+  --danger: #b91c1c;
+  --danger-soft: rgba(254, 226, 226, 0.85);
+  --danger-border: rgba(252, 165, 165, 0.75);
+  --toast-bg: rgba(6, 78, 59, 0.88);
+  --toast-text: #ecfdf5;
+  --input-scheme: light;
+  --card-shadow: 0 8px 28px rgba(6, 95, 70, 0.1);
+  --panel-blur: 16px;
+  --surface-glass: rgba(255, 255, 255, 0.52);
 }
 
 body {
   margin: 0;
+  background: var(--bg);
+  background-image: var(--bg-image);
+  background-attachment: fixed;
+  color: var(--text);
+  transition: background 0.25s ease, color 0.2s ease;
 }
 
 #root {
